@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zorvix — Voice Call Agent</title>
+    <meta name="theme-color" content="#0F172A">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-light: #3B82F6;
+            --accent: #EA580C;
+            --bg: #0F172A;
+            --surface: rgba(255,255,255,0.03);
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: rgba(255,255,255,0.06);
+            --glass: rgba(255,255,255,0.05);
+            --radius: 16px;
+            --space: 16px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 30% 20%, rgba(37,99,235,0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(234,88,12,0.05) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 120px; }
+        .header { padding: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+        .brand-text h1 { font-size: 1.2rem; font-weight: 700; }
+        .brand-text p { font-size: 0.7rem; color: var(--text-muted); }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 20px; }
+        .stat { background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 12px; text-align: center; backdrop-filter: blur(10px); }
+        .stat-val { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, var(--primary-light), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+        .section { padding: 0 20px 20px; }
+        .section-header { font-size: 1rem; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .lead { background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; backdrop-filter: blur(10px); cursor: pointer; transition: all 0.2s; }
+        .lead:active { transform: scale(0.98); }
+        .lead-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .lead-name { font-weight: 600; font-size: 0.95rem; }
+        .lead-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+        .lead-phone { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
+        .badge-pending { background: rgba(245,158,11,0.15); color: #FBBF24; }
+        .badge-reached { background: rgba(34,197,94,0.15); color: #4ADE80; }
+        .badge-interested { background: rgba(34,197,94,0.25); color: #22C55E; }
+        .lead-actions { display: flex; gap: 8px; }
+        .btn { padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 0.8rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; text-decoration: none; }
+        .btn:active { transform: scale(0.95); }
+        .btn-wa { background: #25D366; color: white; }
+        .btn-call { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-sm { padding: 8px 12px; font-size: 0.75rem; }
+        .fab { position: fixed; bottom: 100px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 8px 24px rgba(37,99,235,0.3); cursor: pointer; z-index: 100; }
+        .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,23,42,0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding: 12px 0; z-index: 100; }
+        .nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-size: 0.7rem; }
+        .nav a.active { color: var(--primary-light); }
+        .nav-icon { font-size: 1.3rem; }
+        .modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; align-items: flex-end; justify-content: center; z-index: 200; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #1E293B; border-radius: 24px 24px 0 0; padding: 24px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 1.1rem; font-weight: 600; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+        .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 20px; text-align: center; cursor: pointer; }
+        .upload-zone:active { border-color: var(--primary); }
+        .upload-zone input { display: none; }
+        .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #059669; color: white; padding: 12px 24px; border-radius: 30px; font-weight: 600; font-size: 0.85rem; z-index: 300; transition: transform 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.err { background: #DC2626; }
+        .setup-box { background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+        .setup-box h3 { font-size: 1rem; margin-bottom: 8px; }
+        .setup-box p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+        .setup-box input { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 0.9rem; margin-bottom: 10px; }
+        .setup-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">🎙️</div>
+                <div class="brand-text">
+                    <h1>Zorvix</h1>
+                    <p>AI Voice Agent</p>
+                </div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);" id="connStatus">⚪ Setup</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="stat-val" id="sTotal">0</div><div class="stat-lbl">Leads</div></div>
+            <div class="stat"><div class="stat-val" id="sPending">0</div><div class="stat-lbl">Pending</div></div>
+            <div class="stat"><div class="stat-val" id="sInterested">0</div><div class="stat-lbl">Interested</div></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span>Your Leads</span>
+                <button class="btn btn-outline btn-sm" id="autoCallBtn">▶ Auto Call</button>
+            </div>
+            <div id="leadsList"></div>
+        </div>
+    </div>
+
+    <div class="fab" id="fabBtn">+</div>
+
+    <div class="nav">
+        <a href="#" class="active"><span class="nav-icon">📞</span>Calls</a>
+        <a href="#" onclick="openUpload(); return false;"><span class="nav-icon">➕</span>Add</a>
+        <a href="#" onclick="exportReport(); return false;"><span class="nav-icon">📊</span>Reports</a>
+        <a href="#" onclick="showSetup(); return false;"><span class="nav-icon">⚙️</span>Setup</a>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal-bg" id="uploadModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Upload Leads</div>
+                <button class="modal-close" onclick="closeModal('uploadModal')">&times;</button>
+            </div>
+            <div class="upload-zone" onclick="document.getElementById('csvFile').click()">
+                <input type="file" id="csvFile" accept=".csv" onchange="uploadCSV(event)">
+                <div style="font-size: 2.5rem; margin-bottom: 12px;">📁</div>
+                <p style="font-weight: 600; margin-bottom: 6px;">Tap to upload CSV</p>
+                <p style="color: var(--text-muted); font-size: 0.8rem;">Name, Phone, Business, City, Service</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Modal -->
+    <div class="modal-bg" id="setupModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Setup Supabase</div>
+                <button class="modal-close" onclick="closeModal('setupModal')">&times;</button>
+            </div>
+            <div class="setup-box">
+                <h3>1. Create Supabase Account</h3>
+                <p>Go to supabase.com → Sign up free → Create new project</p>
+                <p>Copy your Project URL and anon key from Settings → API</p>
+            </div>
+            <div class="setup-box">
+                <h3>2. Create Table</h3>
+ <p>Run this SQL in Supabase SQL Editor:</p>
+                <textarea readonly style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.75rem;padding:8px;">create table leads (id uuid default gen_random_uuid() primary key, name text, phone text, business_name text, city text, service text, status text default 'pending', attempts int default 0, notes text default '', created_at timestamptz default now());</textarea>
+            </div>
+            <div class="setup-box">
+                <h3>3. Enter Credentials</h3>
+                <input type="text" id="sbUrl" placeholder="https://xyz.supabase.co">
+                <input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIs...">
+                <button onclick="saveSupabase()">Connect</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
