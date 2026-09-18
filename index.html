@@ -3,87 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zorvix - Voice Agent</title>
-    <meta name="theme-color" content="#1a1a2e">
+    <title>Zorvix — Voice Agent</title>
+    <meta name="theme-color" content="#171717">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --bg: #171717;
+            --surface: #171717;
+            --surface-2: #1a1a1a;
+            --text: #fafafa;
+            --text-secondary: #b4b4b4;
+            --text-muted: #898989;
+            --green: #3ecf8e;
+            --green-link: #00c573;
+            --border-subtle: #242424;
+            --border: #2e2e2e;
+            --border-prominent: #363636;
+            --radius: 16px;
+            --radius-sm: 8px;
+            --radius-pill: 9999px;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #fff; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
-        .container { max-width: 500px; margin: 0 auto; }
-        .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-        .logo { width: 50px; height: 50px; background: linear-gradient(135deg, #6366f1, #f59e0b); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-        h1 { font-size: 1.4rem; }
-        .subtitle { font-size: 0.75rem; color: #94a3b8; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
         
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-        .stat { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 8px; text-align: center; }
-        .stat-val { font-size: 1.6rem; font-weight: 700; color: #818cf8; }
-        .stat-lbl { font-size: 0.65rem; color: #94a3b8; margin-top: 4px; }
+        /* Typography */
+        .mono { font-family: 'Source Code Pro', ui-monospace, monospace; }
         
-        .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+        /* Layout */
+        .app { max-width: 500px; margin: 0 auto; min-height: 100vh; padding-bottom: 120px; }
         
-        .lead { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        /* Header */
+        .header { padding: 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--green), var(--green-link));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+        .brand-text h1 { font-size: 1.3rem; font-weight: 600; }
+        .brand-text p { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; }
+        
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 20px 24px; }
+        .stat {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 8px;
+            text-align: center;
+        }
+        .stat-val { font-size: 1.8rem; font-weight: 600; color: var(--green); }
+        .stat-lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Section */
+        .section { padding: 0 24px 24px; }
+        .section-header {
+            font-size: 0.9rem; font-weight: 500;
+            margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--text-secondary);
+        }
+        
+        /* Lead Card */
+        .lead {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .lead:hover { border-color: var(--border-prominent); }
         .lead-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .lead-name { font-weight: 600; font-size: 0.95rem; }
-        .lead-meta { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
-        .lead-phone { font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; }
+        .lead-name { font-weight: 500; font-size: 0.95rem; color: var(--text); }
+        .lead-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+        .lead-phone { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
         
-        .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
-        .badge-pending { background: rgba(245,158,11,0.2); color: #fbbf24; }
-        .badge-reached { background: rgba(34,197,94,0.2); color: #4ade80; }
-        .badge-calling { background: rgba(99,102,241,0.2); color: #60a5fa; }
+        .badge { padding: 4px 12px; border-radius: var(--radius-pill); font-size: 0.65rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-pending { background: rgba(245,158,11,0.1); color: #fbbf24; }
+        .badge-reached { background: rgba(62,207,142,0.1); color: var(--green); }
+        .badge-calling { background: rgba(99,102,241,0.1); color: #60a5fa; }
         
         .lead-actions { display: flex; gap: 8px; }
-        .btn { padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; border: none; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+        }
         .btn:active { transform: scale(0.95); }
+        .btn-primary { background: #0f0f0f; color: var(--text); border: 1px solid var(--text); border-radius: var(--radius-pill); }
+        .btn-primary:hover { background: var(--text); color: #0f0f0f; }
         .btn-wa { background: #25d366; color: white; }
-        .btn-call { background: #6366f1; color: white; }
-        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; }
-        .btn-sm { padding: 8px 12px; font-size: 0.75rem; }
+        .btn-call { background: var(--green); color: #0f0f0f; }
+        .btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--border-prominent); color: var(--text); }
+        .btn-sm { padding: 8px 14px; font-size: 0.75rem; }
         
-        .fab { position: fixed; bottom: 80px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #f59e0b); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 100; border: none; }
+        /* FAB */
+        .fab {
+            position: fixed; bottom: 100px; right: 20px;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--green), var(--green-link));
+            color: #0f0f0f;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; cursor: pointer; z-index: 100;
+            border: none;
+        }
         
-        .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: rgba(26,26,46,0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.06); display: flex; padding: 12px 0; z-index: 100; }
-        .nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #94a3b8; text-decoration: none; font-size: 0.7rem; }
-        .nav a.active { color: #818cf8; }
+        /* Bottom Nav */
+        .nav {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 500px;
+            background: rgba(23,23,23,0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-subtle);
+            display: flex; padding: 14px 0;
+            padding-bottom: max(14px, env(safe-area-inset-bottom));
+            z-index: 100;
+        }
+        .nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); text-decoration: none; font-size: 0.7rem; font-weight: 500; }
+        .nav a.active { color: var(--green); }
         .nav-icon { font-size: 1.3rem; }
         
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #059669; color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 0.9rem; z-index: 300; transition: transform 0.3s; }
+        /* Toast */
+        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--green); color: #0f0f0f; padding: 14px 28px; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.9rem; z-index: 300; transition: transform 0.3s; }
         .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast.err { background: #dc2626; }
+        .toast.err { background: #dc2626; color: white; }
         
-        .empty { text-align: center; padding: 60px 20px; color: #94a3b8; }
-        .empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
+        /* Empty State */
+        .empty { text-align: center; padding: 70px 24px; color: var(--text-muted); }
+        .empty-icon { font-size: 4rem; margin-bottom: 16px; }
         
-        .upload-zone { border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; margin-bottom: 16px; }
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 50px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .upload-zone:hover { border-color: var(--green); }
         .upload-zone input { display: none; }
+        
+        /* Install Banner */
+        .install-banner {
+            background: linear-gradient(135deg, var(--green), var(--green-link));
+            padding: 14px 24px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .install-banner-text { font-size: 0.85rem; font-weight: 600; color: #0f0f0f; }
+        .install-banner-btn {
+            background: rgba(0,0,0,0.2); color: #0f0f0f;
+            border: none; padding: 8px 16px;
+            border-radius: var(--radius-pill);
+            font-weight: 600; font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">📞</div>
-            <div>
-                <h1>Zorvix</h1>
-                <p class="subtitle">AI Voice Agent</p>
-            </div>
-        </div>
-        
-        <div class="stats">
-            <div class="stat"><div class="stat-val" id="sTotal">0</div><div class="stat-lbl">Leads</div></div>
-            <div class="stat"><div class="stat-val" id="sPending">0</div><div class="stat-lbl">Pending</div></div>
-            <div class="stat"><div class="stat-val" id="sInterested">0</div><div class="stat-lbl">Interested</div></div>
-        </div>
-        
-        <div class="section-title">
-            <span>Leads</span>
-            <button class="btn btn-outline btn-sm" onclick="autoCall()" style="padding:6px 12px;font-size:0.7rem;">▶ Auto Call</button>
-        </div>
-        <div id="leadsList"></div>
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <span class="install-banner-text">📲 Install Zorvix App</span>
+        <button class="install-banner-btn" id="installBtn">Install</button>
     </div>
     
-    <div class="fab" onclick="openUpload()">+</div>
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">🎙️</div>
+                <div class="brand-text">
+                    <h1>Zorvix</h1>
+                    <p>AI Voice Agent</p>
+                </div>
+            </div>
+            <div id="connStatus" style="font-size: 0.75rem; color: var(--text-muted); font-family: 'Source Code Pro', monospace;">⚪ CHECKING</div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat"><div class="stat-val" id="sTotal">0</div><div class="stat-lbl mono">Leads</div></div>
+            <div class="stat"><div class="stat-val" id="sPending">0</div><div class="stat-lbl mono">Pending</div></div>
+            <div class="stat"><div class="stat-val" id="sInterested">0</div><div class="stat-lbl mono">Reached</div></div>
+        </div>
+        
+        <!-- Leads Section -->
+        <div class="section">
+            <div class="section-header">
+                <span>Leads</span>
+                <button class="btn btn-outline btn-sm" id="autoCallBtn">▶ Auto Call</button>
+            </div>
+            <div id="leadsList"></div>
+        </div>
+    </div>
     
+    <!-- FAB -->
+    <div class="fab" id="fabBtn">+</div>
+    
+    <!-- Bottom Nav -->
     <div class="nav">
         <a href="#" class="active"><span class="nav-icon">📞</span>Calls</a>
         <a href="#" onclick="openUpload(); return false;"><span class="nav-icon">➕</span>Add</a>
@@ -93,32 +234,55 @@
     <div class="toast" id="toast"></div>
 
     <script>
+    // ===== CONFIG =====
     const SUPABASE_URL = "https://bgnmpbnekzhwssyfjdwg.supabase.co";
     const SUPABASE_KEY = "sb_publishable_9hmtvzm0pUcDCSkBiGE8iQ_uxHKzt2x";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let leads = [];
+    let deferredPrompt;
     
+    // PWA Install
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBanner').style.display = 'flex'; });
+    document.getElementById('installBtn').addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; document.getElementById('installBanner').style.display = 'none'; } });
+    
+    // ===== LOAD LEADS =====
     async function loadLeads() {
-      const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-      if (error) { console.error(error); return; }
-      leads = data || [];
-      renderLeads();
-      updateStats();
+      const statusEl = document.getElementById('connStatus');
+      const listEl = document.getElementById('leadsList');
+      
+      try {
+        const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Supabase error:', error);
+          statusEl.textContent = '🔴 ERROR';
+          listEl.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p style="color:#f87171;font-weight:600;">${error.message.slice(0, 80)}</p><p style="font-size:0.75rem;margin-top:8px;">Fix: Supabase → Table Editor → leads → ⚙️ → Disable RLS</p></div>`;
+          return;
+        }
+        
+        leads = data || [];
+        statusEl.textContent = `🟢 ${leads.length} LEADS`;
+        renderLeads();
+        updateStats();
+      } catch (e) {
+        statusEl.textContent = '🔴 OFFLINE';
+        listEl.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><p>Connection failed</p><p style="font-size:0.75rem;margin-top:6px;">${e.message.slice(0, 60)}</p></div>`;
+      }
     }
     
     function updateStats() {
-      const s = { total: leads.length, pending: 0, interested: 0 };
-      for (const l of leads) { if (l.status === 'pending') s.pending++; if (l.status === 'interested') s.interested++; }
+      const s = { total: leads.length, pending: 0, reached: 0 };
+      for (const l of leads) { if (l.status === 'pending') s.pending++; else if (l.status === 'reached' || l.status === 'interested') s.reached++; }
       document.getElementById('sTotal').textContent = s.total;
       document.getElementById('sPending').textContent = s.pending;
-      document.getElementById('sInterested').textContent = s.interested;
+      document.getElementById('sInterested').textContent = s.reached;
     }
     
     function renderLeads() {
       const c = document.getElementById('leadsList');
-      if (!leads.length) { c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>No leads yet. Tap + to add.</p></div>'; return; }
+      if (!leads.length) { c.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>No leads yet</p><p style="font-size:0.75rem;margin-top:6px;">Tap + to upload CSV</p></div>'; return; }
       c.innerHTML = leads.map(l => `
-        <div class="lead">
+        <div class="lead" onclick="openDetail('${l.id}')">
           <div class="lead-top">
             <div>
               <div class="lead-name">${l.name}</div>
@@ -126,8 +290,8 @@
             </div>
             <span class="badge badge-${l.status}">${l.status}</span>
           </div>
-          <div class="lead-phone">📱 ${l.phone}</div>
-          <div class="lead-actions">
+          <div class="lead-phone mono">📱 ${l.phone}</div>
+          <div class="lead-actions" onclick="event.stopPropagation()">
             <a href="tel:${l.phone}" class="btn btn-call btn-sm">📞 Call</a>
             <a href="https://wa.me/${l.phone.replace('+', '')}?text=Hi ${l.name}! Main Zorvix se call kar raha hoon." target="_blank" class="btn btn-wa btn-sm" onclick="markReached('${l.id}')">💬 WhatsApp</a>
             <button class="btn btn-outline btn-sm" onclick="genSite('${l.id}')">🌐 Site</button>
@@ -136,15 +300,22 @@
       `).join('');
     }
     
+    // ===== ACTIONS =====
     async function markReached(id) { await supabase.from('leads').update({ status: 'reached' }).eq('id', id); }
     
     async function genSite(id) {
       const lead = leads.find(l => l.id === id); if (!lead) return;
       const svc = lead.service ? lead.service.split(',').map(s => s.trim()) : ['Quality Services'];
-      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${lead.business_name || lead.name}</title><style>body{font-family:sans-serif;margin:0;background:#f8fafc;color:#1e293b}.n{background:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgb(0 0 0 / .1)}.lo{font-size:1.3rem;font-weight:700;color:#6366f1;text-decoration:none}.ct{background:#6366f1;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600}.h{background:linear-gradient(135deg,#6366f1,#f59e0b);color:#fff;padding:80px 24px;text-align:center}.h h1{font-size:2.2rem;margin-bottom:12px}.t{font-size:1.1rem;opacity:.9;max-width:500px;margin:0 auto 28px}.b{background:#fff;color:#6366f1;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600}.s{padding:60px 24px}.s h2{text-align:center;font-size:1.6rem;margin-bottom:32px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:900px;margin:0 auto}.sc{background:#fff;padding:24px;border-radius:8px;text-align:center;border:1px solid #e2e8f0}.cn{padding:60px 24px;text-align:center}.cn p{margin:8px 0;font-size:1rem}.f{background:#1e293b;color:#94a3b8;text-align:center;padding:24px 0;font-size:.85rem}</style></head><body><nav class="n"><a href="#" class="lo">${lead.business_name || lead.name}</a><a href="tel:${lead.phone}" class="ct">📞 Call Now</a></nav><header class="h"><h1>Welcome to ${lead.business_name || lead.name}</h1><p class="t">${svc.join(', ')} in ${lead.city || 'your area'}</p><a href="tel:${lead.phone}" class="b">📞 Call Us Now</a></header><section class="s"><h2>Our Services</h2><div class="g">${svc.map(s=>`<div class="sc"><div style="font-size:2rem">⭐</div><h3>${s}</h3></div>`).join('')}</div></section><section class="cn"><h2>Contact</h2>${lead.name?`<p><strong>Owner:</strong> ${lead.name}</p>`:''}<p><strong>Phone:</strong> <a href="tel:${lead.phone}">${lead.phone}</a></p>${lead.city?`<p><strong>Location:</strong> ${lead.city}</p>`:''}</section><footer class="f"><p>© ${new Date().getFullYear()} ${lead.business_name || lead.name}. Powered by Zorvix</p></footer></body></html>`;
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${lead.business_name || lead.name}</title><style>body{font-family:Inter,sans-serif;margin:0;background:#f8fafc;color:#1e293b}.n{background:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgb(0 0 0 / .1)}.lo{font-size:1.3rem;font-weight:700;color:#3ecf8e;text-decoration:none}.ct{background:#3ecf8e;color:#0f0f0f;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600}.h{background:linear-gradient(135deg,#3ecf8e,#00c573);color:#0f0f0f;padding:80px 24px;text-align:center}.h h1{font-size:2.2rem;margin-bottom:12px}.t{font-size:1.1rem;opacity:.9;max-width:500px;margin:0 auto 28px}.b{background:#0f0f0f;color:#3ecf8e;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600}.s{padding:60px 24px}.s h2{text-align:center;font-size:1.6rem;margin-bottom:32px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:900px;margin:0 auto}.sc{background:#fff;padding:24px;border-radius:8px;text-align:center;border:1px solid #e2e8f0}.cn{padding:60px 24px;text-align:center}.cn p{margin:8px 0;font-size:1rem}.f{background:#1e293b;color:#94a3b8;text-align:center;padding:24px 0;font-size:.85rem}</style></head><body><nav class="n"><a href="#" class="lo">${lead.business_name || lead.name}</a><a href="tel:${lead.phone}" class="ct">📞 Call Now</a></nav><header class="h"><h1>Welcome to ${lead.business_name || lead.name}</h1><p class="t">${svc.join(', ')} in ${lead.city || 'your area'}</p><a href="tel:${lead.phone}" class="b">📞 Call Us Now</a></header><section class="s"><h2>Our Services</h2><div class="g">${svc.map(s=>`<div class="sc"><div style="font-size:2rem">⭐</div><h3>${s}</h3></div>`).join('')}</div></section><section class="cn"><h2>Contact</h2>${lead.name?`<p><strong>Owner:</strong> ${lead.name}</p>`:''}<p><strong>Phone:</strong> <a href="tel:${lead.phone}">${lead.phone}</a></p>${lead.city?`<p><strong>Location:</strong> ${lead.city}</p>`:''}</section><footer class="f"><p>© ${new Date().getFullYear()} ${lead.business_name || lead.name}. Powered by Zorvix</p></footer></body></html>`;
       const blob = new Blob([html], { type: 'text/html' });
       window.open(URL.createObjectURL(blob), '_blank');
       toast('✅ Site opened!');
+    }
+    
+    function openDetail(id) {
+      const l = leads.find(x => x.id === id); if (!l) return;
+      const msg = prompt(`Message for ${l.name}?`, `Hi ${l.name}! Aapki website ban gayi hai!`);
+      if (msg) { window.open(`https://wa.me/${l.phone.replace('+', '')}?text=${encodeURIComponent(msg)}`, '_blank'); markReached(id); }
     }
     
     async function autoCall() {
@@ -166,7 +337,7 @@
         const rows = [];
         for (let i = 1; i < lines.length; i++) { const v = lines[i].split(',').map(x => x.trim()); if (v[0] && v[1]) rows.push({ name: v[0], phone: v[1].replace(/[\s\-\(\)]/g, ''), business_name: v[2] || '', city: v[3] || '', service: v[4] || '' }); }
         const { error } = await supabase.from('leads').insert(rows);
-        if (error) return toast('Upload failed', true);
+        if (error) return toast('Upload failed: ' + error.message, true);
         toast('✅ ' + rows.length + ' leads added');
         loadLeads();
       };
