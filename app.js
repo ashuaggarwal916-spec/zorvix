@@ -1,26 +1,60 @@
-// Zorvix v3 — Neumorphism UI + Auto Supabase + WhatsApp
+// Zorvix v4 — Fixed RLS + Install Button + Working Buttons
 const SUPABASE_URL = "https://bgnmpbnekzhwssyfjdwg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9hmtvzm0pUcDCSkBiGE8iQ_uxHKzt2x";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let leads = [];
+let deferredPrompt;
+
+// PWA Install
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'flex';
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    document.getElementById('installBanner').style.display = 'none';
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('connStatus').textContent = '🟢 Live';
   loadLeads();
-  setInterval(loadLeads, 8000);
+  setInterval(loadLeads, 5000);
 });
 
 async function loadLeads() {
-  const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-  if (error) {
-    if (error.message.includes('relation') || error.message.includes('does not exist')) {
-      document.getElementById('leadsList').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Table missing in Supabase</p><p style="font-size:0.75rem;margin-top:8px;">Run this SQL:</p><textarea readonly style="width:100%;height:50px;font-size:0.6rem;background:var(--bg);border:2px solid var(--text-muted);border-radius:8px;color:var(--text);padding:6px;margin-top:8px;">create table leads (id uuid default gen_random_uuid() primary key, name text, phone text, business_name text, city text, service text, status text default \'pending\', attempts int default 0, notes text default \'\', created_at timestamptz default now());</textarea></div>';
-      return;
+  const statusEl = document.getElementById('connStatus');
+  const listEl = document.getElementById('leadsList');
+  
+  try {
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    
+    if (error) {
+      if (error.message.includes('row-level security') || error.message.includes('RLS') || error.message.includes('permission')) {
+        statusEl.textContent = '🔴 RLS Issue';
+        listEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Supabase RLS Blocking Access</p><p style="font-size:0.75rem;margin-top:8px;color:#f59e0b;">Fix: Supabase → Table Editor → leads → ⚙️ Settings → Disable RLS</p><button class="btn btn-call" style="margin-top:12px;" onclick="window.open('https://supabase.com/dashboard','_blank')">Open Supabase</button></div>`;
+        return;
+      }
+      if (error.message.includes('relation') || error.message.includes('does not exist')) {
+        statusEl.textContent = '🔴 No Table';
+        listEl.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Table missing</p><p style="font-size:0.75rem;margin-top:6px;">Run SQL in Supabase to create table</p></div>';
+        return;
+      }
+      throw error;
     }
+    
+    leads = data || [];
+    statusEl.textContent = '🟢 Connected (' + leads.length + ')';
+    renderLeads();
+    updateStats();
+  } catch (e) {
+    statusEl.textContent = '🔴 Error';
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>${e.message.slice(0, 100)}</p></div>`;
   }
-  leads = data || [];
-  renderLeads();
-  updateStats();
 }
 
 function updateStats() {
@@ -84,32 +118,9 @@ function exportReport() {
   const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent([h.join(','), ...r].join('\n')); a.download = 'zorvix_report.csv'; a.click(); toast('📥 Downloaded');
 }
 
-function showSetup() { document.getElementById('setupModal').classList.add('show'); checkWa(); }
+function showSetup() { document.getElementById('setupModal').classList.add('show'); }
 function openUpload() { document.getElementById('uploadModal').classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-async function checkWa() {
-  try {
-    const res = await fetch('/api/baileys/qr');
-    const data = await res.json();
-    const el = document.getElementById('waStatus');
-    if (data.connected) el.innerHTML = '<p style="color: #16a34a; font-weight: 600;">✅ WhatsApp Connected!</p>';
-    else if (data.qr) {
-      el.innerHTML = '<p style="color: #6366f1; font-weight: 600;">📱 Scan with WhatsApp</p>';
-      document.getElementById('qrContainer').style.display = 'block';
-      document.getElementById('qrImage').src = data.qr;
-    } else el.innerHTML = '<p style="color: #718096;">⏳ Waiting for QR...</p>';
-  } catch { document.getElementById('waStatus').innerHTML = '<p style="color: #dc2626;">❌ Backend not running</p>'; }
-}
-
-function refreshQR() { toast('🔄 Refreshing...'); setTimeout(checkWa, 2000); }
-
-function saveSupabase() {
-  const url = document.getElementById('sbUrl').value;
-  const key = document.getElementById('sbKey').value;
-  if (url && key) { localStorage.setItem('sb_cfg', JSON.stringify({ url, key })); location.reload(); }
-}
-
 function toast(msg, err) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : ''); setTimeout(() => t.className = 'toast', 2500); }
 document.getElementById('fabBtn').onclick = openUpload;
 document.getElementById('autoCallBtn').onclick = autoCall;

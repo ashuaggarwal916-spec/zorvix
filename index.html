@@ -3,33 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Zorvix — Voice Agent</title>
-    <meta name="theme-color" content="#1a1a2e">
+    <title>Zorvix — AI Voice Agent</title>
+    <meta name="theme-color" content="#e0e5ec">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --bg: #e0e5ec;
-            --surface: #e0e5ec;
-            --text: #2d3748;
-            --text-muted: #718096;
-            --primary: #6366f1;
-            --accent: #f59e0b;
-            --shadow-light: #ffffff;
-            --shadow-dark: #a3b1c6;
-            --radius: 20px;
-            --radius-sm: 12px;
-        }
+        :root { --bg: #e0e5ec; --surface: #e0e5ec; --text: #2d3748; --text-muted: #718096; --primary: #6366f1; --accent: #f59e0b; --shadow-light: #ffffff; --shadow-dark: #a3b1c6; --radius: 20px; --radius-sm: 12px; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
         .app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 120px; }
-        
-        /* Neumorphism */
         .neu { background: var(--surface); border-radius: var(--radius); box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light); }
         .neu-sm { background: var(--surface); border-radius: var(--radius-sm); box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light); }
-        .neu-press { box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light); }
+        
+        /* Install Banner */
+        .install-banner { background: linear-gradient(135deg, var(--primary), var(--accent)); padding: 14px 20px; display: none; align-items: center; justify-content: space-between; }
+        .install-banner-text { font-size: 0.85rem; font-weight: 500; color: white; }
+        .install-banner-btn { background: rgba(255,255,255,0.25); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; }
         
         .header { padding: 24px; display: flex; align-items: center; justify-content: space-between; }
         .brand { display: flex; align-items: center; gap: 14px; }
@@ -49,7 +42,7 @@
         .lead:active { transform: scale(0.98); }
         .lead-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .lead-name { font-weight: 600; font-size: 1rem; }
-        .lead-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+        .lead-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
         .lead-phone { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; }
         
         .badge { padding: 5px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
@@ -79,17 +72,26 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .modal-title { font-size: 1.2rem; font-weight: 700; }
         .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer; }
+        
         .upload-zone { border: 3px dashed var(--text-muted); border-radius: var(--radius); padding: 50px 24px; text-align: center; cursor: pointer; opacity: 0.7; }
         .upload-zone:active { border-color: var(--primary); opacity: 1; }
         .upload-zone input { display: none; }
+        
         .empty { text-align: center; padding: 70px 24px; color: var(--text-muted); }
         .empty-icon { font-size: 4rem; margin-bottom: 20px; }
+        
         .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #16a34a; color: white; padding: 14px 28px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; z-index: 300; transition: transform 0.3s; }
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.err { background: #dc2626; }
     </style>
 </head>
 <body>
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <span class="install-banner-text">📲 Install Zorvix App</span>
+        <button class="install-banner-btn" id="installBtn">Install</button>
+    </div>
+    
     <div class="app">
         <div class="header">
             <div class="brand">
@@ -99,7 +101,7 @@
                     <p>AI Voice Agent</p>
                 </div>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);" id="connStatus">⚪ Connecting...</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);" id="connStatus">⚪ Loading...</div>
         </div>
 
         <div class="stats">
@@ -155,7 +157,7 @@
                         <p style="color: var(--text-muted); font-size: 0.85rem;">⏳ Waiting...</p>
                     </div>
                     <button class="btn btn-call" style="width: 100%; margin-bottom: 10px;" onclick="refreshQR()">🔄 Get QR Code</button>
-                    <div id="qrContainer" style="text-align: center; display: none;">
+                    <div id="qrContainer" style="text-align: center; display: none; margin-bottom: 16px;">
                         <img id="qrImage" style="max-width: 200px; border-radius: 16px; border: 3px solid var(--primary);">
                     </div>
                 </div>
